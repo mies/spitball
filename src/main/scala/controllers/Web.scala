@@ -7,7 +7,7 @@ import spray.routing.HttpService
 import spray.httpx.SprayJsonSupport._
 import spray.routing.MalformedRequestContentRejection
 import Formatters._
-import services.Parser
+import services.Drainer
 
 class WebActor extends Actor with Web {
   def actorRefFactory = context
