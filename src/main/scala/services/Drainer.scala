@@ -16,22 +16,27 @@ object Drainer {
       println("PARSED_LINE:" + parsedLine)
       forRequestId(parsedLine).map { entry =>
         println("ENTRY:" + entry)
-        saveToRedis(entry._1, entry._2)
+        toRedis(entry._1, entry._2)
       }
     }
   }
 
+  def key(requestId: String): String = {
+    "REQUEST_ID:" + requestId
+  }
+
   def fromRedis(requestId: String): Map[String, String] = {
     redisService.withRedis { redis =>
-      val data = redis.hgetAll(requestId)
+      val data = redis.hgetAll(key(requestId))
       if (data == null) Map.empty
       else data.asScala.toMap
     }
   }
 
-  def saveToRedis(requestId: String, value: Map[String, String]) {
+  def toRedis(requestId: String, value: Map[String, String]) {
     redisService.withRedis { redis =>
-      redis.hmset(requestId, value.asJava)
+      redis.hmset(key(requestId), value.asJava)
+      redis.expire(key(requestId), sys.env.get("REQUESTS_EXPIRE_SEC").map(_.toInt).getOrElse(30 * 60))
     }
   }
 
