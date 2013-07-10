@@ -8,6 +8,8 @@ import spray.httpx.SprayJsonSupport._
 import spray.routing.MalformedRequestContentRejection
 import Formatters._
 import services.Drainer
+import scala.concurrent.ExecutionContext.Implicits.global
+import spray.http.StatusCodes
 
 class WebActor extends Actor with Web {
   def actorRefFactory = context
@@ -20,9 +22,8 @@ trait Web extends HttpService with Handlers {
     post {
       path("drain") {
         entity(as[String]) { body =>
-          println("BODY:" + body)
-          Drainer.drain(body)
-          complete("OK")
+          Future(Drainer.drain(body))
+          complete(StatusCodes.Accepted)
         }
       }
     } ~

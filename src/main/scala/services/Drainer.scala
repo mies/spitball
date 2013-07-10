@@ -11,14 +11,10 @@ object Drainer {
 
   def drain(in: String) {
     parse(in).foreach { line =>
-      println("LINE:" + line)
       val parsedLine = Logfmt.parse(line.toCharArray).asScala.toMap.mapValues(new String(_))
-      println("PARSED_LINE:" + parsedLine)
       forRequestId(parsedLine).map { entry =>
-        println("ENTRY:" + entry)
         val requestId = entry._1
         val pairs = entry._2.filterKeys(_.startsWith("measure."))
-        println("PAIRS:" + pairs)
         toRedis(requestId, pairs)
       }
     }
