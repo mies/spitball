@@ -12,6 +12,7 @@ object ApplicationBuild extends Build {
     "io.spray"          %   "spray-can"        % sprayVersion,
     "io.spray"          %   "spray-routing"    % sprayVersion,
     "io.spray"          %%  "spray-json"       % "1.2.3",
+    "redis.clients"     %   "jedis"            % "2.1.0",
     "com.typesafe.akka" %%  "akka-actor"       % "2.1.1",
     "com.typesafe.akka" %%  "akka-slf4j"       % "2.1.1"         % "runtime",
     "ch.qos.logback"    %   "logback-classic"  % "1.0.9"         % "compile",

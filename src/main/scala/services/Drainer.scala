@@ -1,10 +1,43 @@
 package services
 
 import org.slf4j.LoggerFactory
+import com.heroku.logfmt.Logfmt
+import scala.collection.JavaConverters._
 
 object Drainer {
 
   def logger = LoggerFactory.getLogger(Drainer.getClass)
+  lazy val redisService = RedisService()
+
+  def drain(in: String) {
+    parse(in).foreach { line =>
+      println("LINE:" + line)
+      val parsedLine = Logfmt.parse(line.toCharArray).asScala.toMap.mapValues(new String(_))
+      println("PARSED_LINE:" + parsedLine)
+      forRequestId(parsedLine).map { entry =>
+        println("ENTRY:" + entry)
+        saveToRedis(entry._1, entry._2)
+      }
+    }
+  }
+
+  def fromRedis(requestId: String): Map[String, String] = {
+    redisService.withRedis { redis =>
+      val data = redis.hgetAll(requestId)
+      if (data == null) Map.empty
+      else data.asScala.toMap
+    }
+  }
+
+  def saveToRedis(requestId: String, value: Map[String, String]) {
+    redisService.withRedis { redis =>
+      redis.hmset(requestId, value.asJava)
+    }
+  }
+
+  def forRequestId(data: Map[String, String]): Option[(String, Map[String, String])] = {
+    data.get("request_id").map(requestId => (requestId, data))
+  }
 
   def parse(in: String): Iterator[String] = {
     def loop(unparsed: Iterator[Char], parsed: Iterator[String]): Iterator[String] = {

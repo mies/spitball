@@ -19,12 +19,16 @@ trait Web extends HttpService with Handlers {
   val route = pathPrefix("v1") {
     post {
       path("drain") {
-        complete("drained")
+        entity(as[String]) { body =>
+          println("BODY:" + body)
+          Drainer.drain(body)
+          complete("OK")
+        }
       }
     } ~
     get {
       path("requests" / Rest) { requestId =>
-        complete(s"requests: $requestId")
+        complete(Drainer.fromRedis(requestId))
       }
     }
   }
