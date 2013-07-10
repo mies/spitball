@@ -16,7 +16,10 @@ object Drainer {
       println("PARSED_LINE:" + parsedLine)
       forRequestId(parsedLine).map { entry =>
         println("ENTRY:" + entry)
-        toRedis(entry._1, entry._2)
+        val requestId = entry._1
+        val pairs = entry._2.filterKeys(_.startsWith("measure."))
+        println("PAIRS:" + pairs)
+        toRedis(requestId, pairs)
       }
     }
   }
@@ -33,10 +36,12 @@ object Drainer {
     }
   }
 
-  def toRedis(requestId: String, value: Map[String, String]) {
-    redisService.withRedis { redis =>
-      redis.hmset(key(requestId), value.asJava)
-      redis.expire(key(requestId), sys.env.get("REQUESTS_EXPIRE_SEC").map(_.toInt).getOrElse(30 * 60))
+  def toRedis(requestId: String, pairs: Map[String, String]) {
+    if (!pairs.isEmpty) {
+      redisService.withRedis { redis =>
+        redis.hmset(key(requestId), pairs.asJava)
+        redis.expire(key(requestId), sys.env.get("REQUESTS_EXPIRE_SEC").map(_.toInt).getOrElse(30 * 60))
+      }
     }
   }
 
