@@ -7,7 +7,7 @@ import spray.routing.HttpService
 import spray.httpx.SprayJsonSupport._
 import spray.routing.MalformedRequestContentRejection
 import Formatters._
-import services.Drainer
+import services.Spitball
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.{HttpResponse, StatusCodes}
 
@@ -22,14 +22,14 @@ trait Web extends HttpService with Handlers {
     post {
       path("drain") {
         entity(as[String]) { body =>
-          Future(Drainer.drain(body))
+          Future(Spitball.drain(body))
           complete(HttpResponse(StatusCodes.Accepted))
         }
       }
     } ~
     get {
       path("requests" / Rest) { requestId =>
-        complete(Drainer.fromRedis(requestId))
+        complete(Future(Spitball.get(requestId)))
       }
     }
   }
