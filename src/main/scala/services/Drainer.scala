@@ -37,6 +37,7 @@ object Drainer {
       redisService.withRedis { redis =>
         redis.hmset(key(requestId), pairs.asJava)
         redis.expire(key(requestId), sys.env.get("REQUESTS_EXPIRE_SEC").map(_.toInt).getOrElse(30 * 60))
+        logger.info(s"redis.save saved.request_id=$requestId saved.pairs=${pairs.keys.size}")
       }
     }
   }
