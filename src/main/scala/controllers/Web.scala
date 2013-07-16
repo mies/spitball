@@ -16,7 +16,7 @@ class WebActor extends Actor with Web {
   def receive = runRoute(route)
 }
 
-trait Web extends HttpService with Handlers {
+trait Web extends HttpService with Handlers with CORSDirectives {
 
   val route = pathPrefix("v1") {
     post {
