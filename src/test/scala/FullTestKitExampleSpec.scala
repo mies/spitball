@@ -1,27 +1,14 @@
+import akka.actor.ActorRefFactory
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
 import spray.routing.HttpService
 import spray.http.StatusCodes._
+import controllers.{WebActor, Web}
 
 
 class FullTestKitExampleSpec extends Specification with Specs2RouteTest with HttpService {
   def actorRefFactory = system // connect the DSL to the test ActorSystem
-
-  val smallRoute =
-    get {
-      path("") {
-        complete {
-          <html>
-            <body>
-              <h1>Say hello to <i>spray</i>!</h1>
-            </body>
-          </html>
-        }
-      } ~
-        path("ping") {
-          complete("PONG!")
-        }
-    }
+  val routes = new WebActor
 
   "The service" should {
 
