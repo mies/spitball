@@ -2,6 +2,7 @@ Spitball
 ========
 
 Build metric aggregation as a (very simple) service.
+Drain to spitball.herokuapp.com/v1/drain
 
 How It Works
 ------------
