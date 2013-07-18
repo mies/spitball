@@ -24,6 +24,7 @@ object Spitball {
     }
   }
 
+
   private def parse(in: String): Iterator[String] = {
     def loop(unparsed: Iterator[Char], parsed: Iterator[String]): Iterator[String] = {
       if (unparsed.isEmpty) parsed
@@ -38,11 +39,11 @@ object Spitball {
   }
 
   private def forRequestId(data: Map[String, String]): Option[(String, Map[String, String])] = {
-    data.get("request_id|rid").map(requestId => (requestId, data))
+    data.get("request_id").orElse(data.get("rid")).map(requestId => (requestId, data))
   }
 
-  private def splitRequestID(data: (String, Map[String,String])) : Array[(String, Map[String,String])] = for{
-    request_id <- data._1.split(',')
+  private def splitRequestID(data: (String, Map[String,String])) : Seq[(String, Map[String,String])] = for{
+    request_id <- data._1.split(',').toSeq
    } yield (request_id,data._2)
 
   private def key(requestId: String): String = {
