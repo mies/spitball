@@ -15,9 +15,11 @@ object Spitball {
     parse(logs).foreach { line =>
       val parsedLine = Logfmt.parse(line.toCharArray).asScala.toMap.mapValues(new String(_))
       forRequestId(parsedLine).map { entry =>
-        val requestId = entry._1
-        val pairs = entry._2.filterKeys(_.startsWith("measure."))
-        toRedis(requestId, pairs)
+        splitRequestID(entry).map { entry =>
+          val requestId = entry._1
+          val pairs = entry._2.filterKeys(_.startsWith("measure."))
+          toRedis(requestId, pairs)
+        }
       }
     }
   }
@@ -36,8 +38,12 @@ object Spitball {
   }
 
   private def forRequestId(data: Map[String, String]): Option[(String, Map[String, String])] = {
-    data.get("request_id").map(requestId => (requestId, data))
+    data.get("request_id|rid").map(requestId => (requestId, data))
   }
+
+  private def splitRequestID(data: (String, Map[String,String])) : Array[(String, Map[String,String])] = for{
+    request_id <- data._1.split(',')
+   } yield (request_id,data._2)
 
   private def key(requestId: String): String = {
     "REQUEST_ID:" + requestId
