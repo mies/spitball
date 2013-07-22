@@ -39,6 +39,11 @@ After refactoring our metrics to more a semantically consistent format and using
 * L2Met style logs
 * Archive in Postgres. 
 
+#### Desires
+* Be able to get log-runtime-metrics linked to requests.
+* Better handling of metrics with the same name. 
+* Meta-data about the metric. (when did it come in)?
+
 ### Case Study: Straw (used with Dashboard)
 
 Trying to filter through logs to find ones that are relevant to the operation that you just performed is difficult. With this in mind Straw was created. 
@@ -49,6 +54,10 @@ Straw is a plugin for chrome dev tools that allows you to retrieve the metrics a
 * Request_ids
 * L2Met style logs
 * Return the Request_id assigned to each request in a header of the response. 
+
+#### Desires
+* Better handling of metrics with the same name
+* Meta-data about the metric. (when did it come in)?
 
 <a name="partition"/>
 Partitioning Metrics by Request Context
