@@ -1,35 +1,31 @@
-Problem
-=======
-There is no way to know *the context surrounding* a metric, only that it happened. 
+Problem (WIP...)
+================
+There is no way to know *the context surrounding* a metric, only that it happened.  
 
-We are starting to overlog because there is no way to tell if a metric is redundant. 
+Goal (WIP...)
+=============
+* To encode and expose context.
+* To encode more context into metrics. With increasing the number of metrics you have to deal with.
+* Less, more general metrics. More, specific context. 
+* By encoding key pieces of context into metrics you can reduce the granularity that you have to log at.
+* To extract context from the metrics that happened in the same context.
+* Encoding more context in metrics will allow us to make alerts that have tighter variance ranges make them higher fidelity.
+* Currently we view metrics (on librato) with almost no context. When we see them we have to know what should be there. 
 
-Goal
-====
-To encode more context into metrics. With increasing the number of metrics you have to deal with.
-
-Less, more general metrics. 
-More, specific context. 
-
-By encoding key pieces of context into metrics you can reduce the granularity that you have to log at.
-
-To extract context from the metrics that happened in the same context.
-
-Encoding more context in metrics will allow us to make alerts that have tighter variance ranges make them higher fidelity.
-
-Currently we view metrics (on librato) with almost no context. When we see them we have to know what should be there. 
 
 Current Success
-==============
+===============
 
 We already have had moderate success simply by aggregating metrics on request_ids and using the l2met style logs. These uses fall into one of the following categories.
 
-* [Real Time Request Retrieval](#Real Time Request Retrieval )
-* [Partitioning Metrics by Request Context](#Partitioning Metrics by Request Context)
-* [Cross Application Inspection](#Cross Application Inspection)
+* [Real Time Request Retrieval](#retrival)
+* [Partitioning Metrics by Request Context](#parition)
+* [Cross Application Inspection](#crossapp)
 
+<a name="retrival"/>
 Real Time Request Retrieval 
-----------------------------------------------------------------------------------------
+---------------------------
+
 By using request_ids in their logs users are able to quickly filter out just the metrics relevant to the request. No splunk required. 
 
 ### Case Study: Tracking Down Build Slowdowns
@@ -54,6 +50,7 @@ Straw is a plugin for chrome dev tools that allows you to retrieve the metrics a
 * L2Met style logs
 * Return the Request_id assigned to each request in a header of the response. 
 
+<a name="partition"/>
 Partitioning Metrics by Request Context
 -------------------------------------------------------
 Encoding user parameters to enable the user to later filter based on them. 
@@ -67,7 +64,7 @@ On build and packaging after tracking down one of our biggest offenders for dyno
 * L2Met style logs
 * Archive in Postgres
 
-
+<a name="crossapp"/>
 Cross Application Inspection
 ----------------------------------------
 By passing the Request_id that you created for your request to other services and using spitball for aggregation, we are able to see a much more complete picture of the lifecycle of the request.
@@ -80,24 +77,4 @@ Currently both B&P and Dashboard are working to improve performance. Spitball ha
 * Request_Ids
 * L2Met style logs
 * Add log drain to spitball to service that you are calling into
-
-
-
-
-
-
-
-
-
-
-Encoding the end of requests (using the semantics described later) will enable customers (internal) to get a stream of the requests coming out of their application, which is a much smaller and denser stream then all of the log lines coming out of the application. For build and packing it reduces the volume of information from 700 lines per second to about 2 requests per second. 
-
-How
-===
-Augment the l2met format to encode more semantic value into metrics.
-
-
-What
-====
-
 
