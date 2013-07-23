@@ -29,8 +29,16 @@ trait Web extends HttpService with Handlers with CORSDirectives {
     } ~
     get {
       path("requests" / Rest) { requestId =>
+        complete(Future(Spitball.getV1(requestId)))
+      }
+    }
+  } ~
+  pathPrefix("v2"){
+    get{
+      path("requests" / Rest) { requestId =>
         complete(Future(Spitball.get(requestId)))
       }
     }
   }
+
 }

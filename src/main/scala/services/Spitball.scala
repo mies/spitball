@@ -6,6 +6,10 @@ import scala.collection.JavaConverters._
 import scala.annotation.tailrec
 import java.text.SimpleDateFormat
 import spray.json._
+import models._
+import controllers.Formatters._
+import spray.httpx.SprayJsonSupport._
+import scala.util.parsing.json.JSONObject
 
 object Spitball {
 
@@ -13,11 +17,14 @@ object Spitball {
   private lazy val redisService = RedisService()
   private val datep = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ")
 
-
-  case class LogLine(val line:String, val time:java.util.Date)
-  case class LogValue(val value:String, val time:java.util.Date)
-
   def get(requestId: String) = fromRedis(requestId)
+
+
+  def getV1(requestId:String):Map[String,String]= {
+    fromRedis(requestId).foldRight(Map[String,String]()) {(measure, agg)=>
+      agg + (measure.name -> measure.value)
+    }
+  }
 
   def drain(logs: String) {
     parse(logs).foreach { line =>
@@ -28,7 +35,7 @@ object Spitball {
         val jsonPairs =  pairs.map { kv =>
           val key = kv._1
           val value = kv._2
-          (key, LogValue(value,line.time).toJson.toString())
+          (key, LogValue(value,line.time))
         }
         toRedis(requestId, jsonPairs)
       }
@@ -58,21 +65,27 @@ object Spitball {
     "REQUEST_ID:" + requestId
   }
 
-  private def fromRedis(requestId: String): Map[String, String] = {
+  private  def fromRedis(requestId: String): Seq[Measure]= {
     redisService.withRedis { redis =>
-      val data = redis.hgetAll(key(requestId))
-      if (data == null) Map.empty
-      else data.asScala.toMap
+      val data  = redis.lrange(requestId,0,-1)
+      val measures= data.asScala.map{ value =>
+        value.asJson.convertTo[Measure]
+      }
+      return measures
     }
   }
-
-  private def toRedis(requestId: String, pairs: Map[String, String]) {
+  private def toRedis(requestId: String, pairs: Map[String, LogValue]) {
     if (!pairs.isEmpty) {
       redisService.withRedis { redis =>
-        redis.hmset(key(requestId), pairs.asJava)
+        val strs = pairs.map { kv =>
+          (kv._1, (kv._2.value, kv._2.time.toString)).toJson.toString()
+            }
+
+        redis.rpush(key(requestId), strs.toSeq:_*)
         redis.expire(key(requestId), sys.env.get("REQUESTS_EXPIRE_SEC").map(_.toInt).getOrElse(10 * 60))
         logger.info(s"redis.save saved.request_id=$requestId saved.pairs=${pairs.keys.size}")
       }
     }
   }
 }
+
