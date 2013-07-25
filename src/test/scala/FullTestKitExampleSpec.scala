@@ -1,42 +1,68 @@
-import akka.actor.ActorRefFactory
+import scala.collection.JavaConverters._
+import spray.json._
+import models._
 import org.specs2.mutable.Specification
+import redis.clients.jedis.Jedis
 import spray.testkit.Specs2RouteTest
 import spray.routing.HttpService
-import spray.http.StatusCodes._
-import controllers.{WebActor, Web}
-import services.Spitball
+import services.{RedisService, Spitball}
+import org.specs2.mock._
+import java.util.Date
+import controllers.Formatters._
+
+class FullTestKitExampleSpec extends Specification with Specs2RouteTest with HttpService with Mockito {
+  def actorRefFactory = system
+
+  // connect the DSL to the test ActorSystem
+  val redis = mock[Jedis]
+  val redisService = mock[RedisService]
+  redisService.withRedis(anyFunction1[Jedis, Any]).answers {
+    t =>
+      t.asInstanceOf[(Jedis => Any)](redis)
+  }
 
 
-class FullTestKitExampleSpec extends Specification with Specs2RouteTest with HttpService {
-  def actorRefFactory = system // connect the DSL to the test ActorSystem
-  val routes = new WebActor
+  val d = new Date()
 
+  val spit = new Spitball(redisService)
   "The service" should {
 
-    "split multiple request ids" in {
+
+    val time: Long = 42
+    val testMeasures = List(Measure("test", "val", time), Measure("test2", "val2", time))
+    val testStrings = testMeasures.map {
+      _.toJson.toString()
+    }
+
+    "check our mocking" in {
       {
-
+        redis.get("test") returns "foo"
+        redis.get("test")
+        there was redis.get("test")
 
       }
     }
-
-    "" in {
-      Get("/ping") ~> smallRoute ~> check {
-        entityAs[String] === "PONG!"
-      }
+    "toRedis should add a map of values to redis" in {
+      spit.toRedis("1", testMeasures.toSeq)
+      there was one(redis).rpush("REQUEST_ID:1", testStrings: _*)
     }
 
-    "" in {
-      Get("/kermit") ~> smallRoute ~> check {
-        handled must beFalse
-      }
+    "fromRedis should return a set of Measures" in {
+      redis.lrange("test", 0, -1) returns testStrings.asJava
+      val values = spit.fromRedis("test")
+      there was atLeastOne(redis).lrange("test", 0, -1)
+
+      values.length equals 2
+      values(1).name equals "test2"
+      values(1).time equals 42
+      values(1).value equals "val2"
     }
 
-    "" in {
-      Put() ~> sealRoute(smallRoute) ~> check {
-        status === MethodNotAllowed
-        entityAs[String] === "HTTP method not allowed, supported methods: GET"
-      }
+    "v1 api should return expected json" in {
+      redis.lrange("test", 0, -1) returns testStrings.asJava
+      val kvs = spit.getV1("test")
+      kvs("test") equals "val"
+      kvs("test2") equals "val2"
     }
   }
 }
