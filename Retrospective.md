@@ -1,25 +1,17 @@
-Problem (WIP...)
+Problem (work in progress)
 ================
-There is no way to know *the context surrounding* a metric, only that it happened.  
+I need the logs for a particular request. Currently the only way to do that is to dig through splunk or grep the log stream. 
 
-Goal (WIP...)
+Goal
 =============
-* To encode and expose context.
-* To encode more context into metrics. With increasing the number of metrics you have to deal with.
-* Less, more general metrics. More, specific context. 
-* By encoding key pieces of context into metrics you can reduce the granularity that you have to log at.
-* To extract context from the metrics that happened in the same context.
-* Encoding more context in metrics will allow us to make alerts that have tighter variance ranges make them higher fidelity.
-* Currently we view metrics (on librato) with almost no context. When we see them we have to know what should be there. 
-
+Expose the request primitive in a way that allows access to all the metrics relevant to it. 
 
 Current Success
 ===============
-
-We already have had moderate success simply by aggregating metrics on request_ids and using the l2met style logs. These uses fall into one of the following categories.
+We already have had moderate success simply by collecting metrics on request_ids and using the l2met style logs. These uses fall into one of the following categories.
 
 * [Real Time Request Retrieval](#retrival)
-* [Partitioning Metrics by Request Context](#parition)
+* [Partitioning Metrics by Request Context](#partition)
 * [Cross Application Inspection](#crossapp)
 
 <a name="retrival"/>
@@ -60,9 +52,9 @@ Straw is a plugin for chrome dev tools that allows you to retrieve the metrics a
 * Meta-data about the metric. (when did it come in)?
 
 <a name="partition"/>
-Partitioning Metrics by Request Context
+Partitioning Metrics by Request Content
 -------------------------------------------------------
-Encoding user parameters to enable the user to later filter based on them. 
+Content of the request was used to partition the metrics that were used to generate some sort of report.
 
 ### Case Study: Git Fetch Caching
 
@@ -76,7 +68,7 @@ On build and packaging after tracking down one of our biggest offenders for dyno
 <a name="crossapp"/>
 Cross Application Inspection
 ----------------------------------------
-By passing the Request_id that you created for your request to other services and using spitball for aggregation, we are able to see a much more complete picture of the lifecycle of the request.
+By passing the Request_id that that was created for the request to other services and using spitball for aggregation,  a much more complete picture of the lifecycle of the request is exposed.
 
 ### Case Study: API
 
