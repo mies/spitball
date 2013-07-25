@@ -1,5 +1,2 @@
 box: pjvds/scala@0.0.81
-
-build:
-  steps:
-    - ericfode/wercker-sbt-test
+step: ericfode/sbt-test@0.1.0
