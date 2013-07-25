@@ -1,4 +1,4 @@
-box: pjvds/scala@0.0.81
+box: pjvds/scala
 build:
   steps: 
     - ericfode/sbt-test@0.1.0
