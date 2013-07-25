@@ -1,9 +1,14 @@
 package controllers
 
 import akka.actor._
+import java.net.URL
 import concurrent.Future
 import spray.routing.HttpService
+import spray.httpx.SprayJsonSupport._
+import spray.routing.MalformedRequestContentRejection
+import Formatters._
 import services.Spitball
+import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.{HttpResponse, StatusCodes}
 
 class WebActor extends Actor with Web {

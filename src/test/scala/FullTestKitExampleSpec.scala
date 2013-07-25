@@ -38,7 +38,7 @@ class FullTestKitExampleSpec extends Specification with Specs2RouteTest with Htt
       {
         redis.get("test") returns "foo"
         redis.get("test")
-        there was redis.get("test")
+        there was one(redis).get("test")
 
       }
     }

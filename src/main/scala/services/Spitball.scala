@@ -28,7 +28,7 @@ class Spitball(val redisService: RedisService) {
     fromRedis(requestId).foldRight(Map[String, String]()) {
       (measure, agg) =>
         agg + (measure.name -> measure.value)
-    }
+    }.toMap
   }
 
   def drain(logs: String) {
