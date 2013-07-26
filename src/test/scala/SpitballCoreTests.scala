@@ -10,7 +10,7 @@ import org.specs2.mock._
 import java.util.Date
 import controllers.Formatters._
 
-class FullTestKitExampleSpec extends Specification with Mockito {
+class SpitballCoreTests extends Specification with Mockito {
 
   // connect the DSL to the test ActorSystem
 
@@ -53,7 +53,8 @@ class FullTestKitExampleSpec extends Specification with Mockito {
       val (redis,spit) = buildMocks
       redis.lrange("request", 0, -1) returns testStrings.asJava
       val values = spit.fromRedis("request")
-      there was atLeastOne(redis).lrange("request", 0, -1)
+      there was one(redis).lrange("request", 0, -1)
+
 
       values.length equals 2
       values(1).name equals "test2"
@@ -72,11 +73,28 @@ class FullTestKitExampleSpec extends Specification with Mockito {
     "toMeasureList should convert a map of metrics to a list of measures" in {
       val (redis,spit) = buildMocks
       val map = Map("measure.time" -> "20", "measure.awesome" -> "9001")
-      val measures = spit.toMeasureList(map, LogLine("derp", 100))
+      val measures = spit.toMeasures(map, 100)
       measures.length equals 2
       measures(0).name equals "measure.time"
       measures(0).time equals 100
       measures(0).value equals "20"
+    }
+    "key should chomp delemeters before and after request_id" in {
+      val (redis,spit) = buildMocks
+      spit.redisKey("test") equals "REQUEST_ID:test"
+    }
+
+
+    "processLine should process a line correctly" in {
+      val (redis,spit) = buildMocks
+      val line = "rid='req,req2' measure.status='derp' measure.cows='lots'"
+      spit.processLine(LogLine(100,line))
+      there was one(redis).rpush("REQUEST_ID:req",
+        """{"name":"measure.cows","value":"'lots'","time":100}""",
+        """{"name":"measure.status","value":"'derp'","time":100}""")
+       there was one(redis).rpush("REQUEST_ID:req2",
+        """{"name":"measure.cows","value":"'lots'","time":100}""",
+        """{"name":"measure.status","value":"'derp'","time":100}""")
     }
   }
 }

@@ -10,9 +10,8 @@ import models._
 import controllers.Formatters._
 
 object Spitball {
-  def apply() = spit
-
   private lazy val spit = new Spitball(RedisService())
+  def apply() = spit
 }
 
 class Spitball(val redisService: RedisService) {
@@ -21,7 +20,7 @@ class Spitball(val redisService: RedisService) {
 
   val datep = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ")
 
-  def get(requestId: String) = fromRedis(requestId)
+  def get(requestId: String): Seq[Measure] = fromRedis(requestId)
 
 
   def getV1(requestId: String): Map[String, String] = {
@@ -32,22 +31,23 @@ class Spitball(val redisService: RedisService) {
   }
 
   def drain(logs: String) {
-    parse(logs).foreach {
-      line =>
-        val parsedLine = Logfmt.parse(line.line.toCharArray).asScala.toMap.mapValues(new String(_))
-        forRequestId(parsedLine).map {
-          case (request_id, lines) =>
-            toRedis(request_id, toMeasureList(lines, line))
-        }
-    }
+    parse(logs).foreach(processLine(_))
   }
 
-
-  def toMeasureList(parsedLine: Map[String, String], line: LogLine): Seq[Measure] = {
+  def processLine(line:LogLine){
+    val parsedLine = Logfmt.parse(line.line.toCharArray).asScala.toMap.mapValues(new String(_))
+    filterRequests(parsedLine).map {  pairs =>
+      splitRequestID(pairs).map {
+        case (request_id,metricPairs) =>
+          toRedis(request_id, toMeasures(metricPairs, line.time))
+      }
+    }
+  }
+  def toMeasures(parsedLine: Map[String, String], time: Long): Seq[Measure] = {
     val filtered = parsedLine.filterKeys(_.startsWith("measure."))
     filtered.map {
       case (metric, value) =>
-        Measure(metric, value, line.time)
+        Measure(metric, value, time)
     }.toSeq
   }
 
@@ -55,23 +55,27 @@ class Spitball(val redisService: RedisService) {
   private def parse(in: String): Iterator[LogLine] = {
     @tailrec
     def loop(unparsed: Iterator[Char], parsed: Iterator[LogLine]): Iterator[LogLine] = {
-      if (unparsed.isEmpty) parsed
+     if (unparsed.isEmpty) parsed
       else {
         val (head, tail) = unparsed.span(_ != ' ')
         val length = head.mkString.toInt
         val chunk = tail.slice(1, 1 + length).mkString
         val time = datep.parse(chunk.split(' ')(1)).getTime
-        loop(tail, parsed ++ Iterator(LogLine(chunk, time)))
+        loop(tail, parsed ++ Iterator(LogLine(time, chunk)))
       }
     }
     loop(in.toIterator, Iterator.empty)
   }
 
-  private def forRequestId(data: Map[String, String]): Option[(String, Map[String, String])] = {
-    data.get("request_id").map(requestId => (requestId, data))
+  private def filterRequests(data: Map[String, String]): Option[(String, Map[String, String])] = {
+   data.get("request_id").orElse(data.get("rid")).map(requestId => (requestId, data))
   }
 
-  private def key(requestId: String): String = {
+  private def splitRequestID(data: (String, Map[String,String])) : Seq[(String, Map[String,String])] = for{
+    request_id <- data._1.split(',').toSeq
+   } yield (request_id.replaceAll("""["']""",""),data._2)
+
+  def redisKey(requestId: String): String = {
     "REQUEST_ID:" + requestId
   }
 
@@ -95,8 +99,8 @@ class Spitball(val redisService: RedisService) {
             kv =>
               kv.toJson.toString()
           }
-          redis.rpush(key(requestId), jsonMeasures.toSeq: _*)
-          redis.expire(key(requestId), sys.env.get("REQUESTS_EXPIRE_SEC").map(_.toInt).getOrElse(10 * 60))
+          redis.rpush(redisKey(requestId), jsonMeasures.toSeq: _*)
+          redis.expire(redisKey(requestId), sys.env.get("REQUESTS_EXPIRE_SEC").map(_.toInt).getOrElse(10 * 60))
           logger.info(s"redis.save saved.request_id=$requestId saved.pairs=${measures.size}")
       }
     }
