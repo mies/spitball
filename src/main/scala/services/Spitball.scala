@@ -28,7 +28,7 @@ class Spitball(val redisService: RedisService) {
     fromRedis(requestId).foldRight(Map[String, String]()) {
       (measure, agg) =>
         agg + (measure.name -> measure.value)
-    }.toMap
+    }
   }
 
   def drain(logs: String) {
@@ -36,17 +36,21 @@ class Spitball(val redisService: RedisService) {
       line =>
         val parsedLine = Logfmt.parse(line.line.toCharArray).asScala.toMap.mapValues(new String(_))
         forRequestId(parsedLine).map {
-          case (requestId, requestMetrics) =>
-            val filteredMetrics = requestMetrics.filterKeys(_.startsWith("measure."))
-            val measures = filteredMetrics.map {
-              case (_, kvString) =>
-                val kv = kvString.split('=')
-                Measure(kv(1), kv(2), line.time)
-            }
-            toRedis(requestId, measures.toSeq)
+          case (request_id, lines) =>
+            toRedis(request_id, toMeasureList(lines, line))
         }
     }
   }
+
+
+  def toMeasureList(parsedLine: Map[String, String], line: LogLine): Seq[Measure] = {
+    val filtered = parsedLine.filterKeys(_.startsWith("measure."))
+    filtered.map {
+      case (metric, value) =>
+        Measure(metric, value, line.time)
+    }.toSeq
+  }
+
 
   private def parse(in: String): Iterator[LogLine] = {
     @tailrec

@@ -64,5 +64,15 @@ class FullTestKitExampleSpec extends Specification with Specs2RouteTest with Htt
       kvs("test") equals "val"
       kvs("test2") equals "val2"
     }
+
+    "toMeasureList should convert a map of metrics to a list of measures" in {
+      val map = Map("measure.time" -> "20", "measure.awesome" -> "9001")
+      val measures = spit.toMeasureList(map, LogLine("derp", 100))
+      measures.length equals 2
+      measures(0).name equals "measure.time"
+      measures(0).time equals 100
+      measures(0).value equals "20"
+
+    }
   }
 }
