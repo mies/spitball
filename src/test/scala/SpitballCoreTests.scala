@@ -87,11 +87,10 @@ class SpitballCoreTests extends Specification with Mockito {
 
     "A real log line should be able to be parsed" in {
       val (redis,spit) = buildMocks
-      val line = "74 <174>1 2012-07-22T00:06:26+00:00 request_id=derp measure.things=231"
+      val line = "74 <174>1 2012-07-22T00:00:00+00:00 request_id=derp measure.things=231"
       spit.drain(line)
       there was one(redis).rpush("REQUEST_ID:derp",
-        """{"name":"measure.things","value":"231","time":1342940786000}"""
-      )
+       """{"name":"measure.things","value":"231","time":1342940400000}""")
     }
     "processLine should process a line correctly with rid" in {
       val (redis,spit) = buildMocks
