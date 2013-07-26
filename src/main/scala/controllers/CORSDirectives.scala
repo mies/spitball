@@ -45,4 +45,3 @@ trait CORSDirectives { this: HttpService =>
       }
 }
 
-
