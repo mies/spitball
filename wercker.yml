@@ -4,7 +4,6 @@ services:
 build:
   steps:
     - script:
-        name: echo java info
-        code: |
-          java -version
+        name: set environment variables
+        code: export REDIS_URL=$WERCKER_REDIS_URL
     - ericfode/sbt-test
