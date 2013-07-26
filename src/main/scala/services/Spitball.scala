@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat
 import spray.json._
 import models._
 import controllers.Formatters._
+import scala.util.{Failure, Success, Try}
 
 object Spitball {
   private lazy val spit = new Spitball(RedisService())
@@ -82,12 +83,14 @@ class Spitball(val redisService: RedisService) {
   def fromRedis(requestId: String): Seq[Measure] = {
     redisService.withRedis {
       redis =>
-        val data = redis.lrange(requestId, 0, -1)
-        val measures = data.asScala.map {
-          value =>
-            value.asJson.convertTo[Measure]
+        val d =  Try(redis.lrange(redisKey(requestId), 0, -1))
+        d match {
+          case Success(data) =>
+            data.asScala.map(_.asJson.convertTo[Measure]).toSeq
+          case Failure(e) =>
+            val oldData = redis.hgetAll(redisKey(requestId))
+            oldData.asScala.map( d => Measure(d._1,d._2,0L)).toSeq
         }
-        return measures
     }
   }
 

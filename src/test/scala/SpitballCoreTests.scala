@@ -1,3 +1,4 @@
+import redis.clients.jedis.exceptions.JedisDataException
 import scala.collection.JavaConverters._
 import spray.json._
 import models._
@@ -51,9 +52,9 @@ class SpitballCoreTests extends Specification with Mockito {
 
     "fromRedis should return a set of Measures" in {
       val (redis,spit) = buildMocks
-      redis.lrange("request", 0, -1) returns testStrings.asJava
+      redis.lrange("REQUEST_ID:request", 0, -1) returns testStrings.asJava
       val values = spit.fromRedis("request")
-      there was one(redis).lrange("request", 0, -1)
+      there was one(redis).lrange("REQUEST_ID:request", 0, -1)
 
 
       values.length equals 2
@@ -64,7 +65,7 @@ class SpitballCoreTests extends Specification with Mockito {
 
     "v1 api should return expected json" in {
       val (redis,spit) = buildMocks
-      redis.lrange("request", 0, -1) returns testStrings.asJava
+      redis.lrange("REQUEST_ID:request", 0, -1) returns testStrings.asJava
       val kvs = spit.getV1("request")
       kvs("test") equals "val"
       kvs("test2") equals "val2"
@@ -113,6 +114,32 @@ class SpitballCoreTests extends Specification with Mockito {
       there was one(redis).rpush("REQUEST_ID:req2",
         """{"name":"measure.cows","value":"'lots'","time":100}""",
         """{"name":"measure.status","value":"'derp'","time":100}""")
+    }
+
+    "get should deal gracefully with old data fromat" in {
+      val (redis,spit) = buildMocks
+      redis.lrange(anyString,anyInt,anyInt) throws new JedisDataException("broken")
+      redis.hgetAll("REQUEST_ID:test") returns Map("key" -> "value", "key2" -> "value2").asJava
+      val vals = spit.get("test")
+      there was one(redis).lrange("REQUEST_ID:test",0,-1)
+      there was one(redis).hgetAll("REQUEST_ID:test")
+
+      vals(0) shouldEqual  Measure("key","value",0)
+      vals(1) shouldEqual  Measure("key2","value2", 0)
+
+    }
+
+    "getV1 redis should deal gracefully with old data fromat" in {
+      val (redis,spit) = buildMocks
+      redis.lrange(anyString,anyInt,anyInt) throws new JedisDataException("broken")
+      redis.hgetAll("REQUEST_ID:test") returns Map("key" -> "value", "key2" -> "value2").asJava
+      val vals = spit.getV1("test")
+      there was one(redis).lrange("REQUEST_ID:test",0,-1)
+      there was one(redis).hgetAll("REQUEST_ID:test")
+
+      vals("key") shouldEqual  "value"
+      vals("key2") shouldEqual "value2"
+
     }
   }
 }
