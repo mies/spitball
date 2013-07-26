@@ -1,4 +1,8 @@
 box: mies/scala
 build:
-  steps: 
+  steps:
+    - script:
+        name: echo java info
+        code: |
+          echo "java -version"
     - ericfode/sbt-test
