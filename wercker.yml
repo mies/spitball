@@ -1,4 +1,4 @@
-box: pjvds/scala
+box: ericfode/scala
 build:
   steps: 
     - ericfode/sbt-test
