@@ -85,7 +85,7 @@ class SpitballCoreTests extends Specification with Mockito {
     }
 
 
-    "processLine should process a line correctly" in {
+    "processLine should process a line correctly with rid" in {
       val (redis,spit) = buildMocks
       val line = "rid='req,req2' measure.status='derp' measure.cows='lots'"
       spit.processLine(LogLine(100,line))
@@ -93,6 +93,17 @@ class SpitballCoreTests extends Specification with Mockito {
         """{"name":"measure.cows","value":"'lots'","time":100}""",
         """{"name":"measure.status","value":"'derp'","time":100}""")
        there was one(redis).rpush("REQUEST_ID:req2",
+        """{"name":"measure.cows","value":"'lots'","time":100}""",
+        """{"name":"measure.status","value":"'derp'","time":100}""")
+    }
+    "processLine should process a line correctly with request_id" in {
+      val (redis,spit) = buildMocks
+      val line = "rid='req,req2' measure.status='derp' measure.cows='lots'"
+      spit.processLine(LogLine(100,line))
+      there was one(redis).rpush("REQUEST_ID:req",
+        """{"name":"measure.cows","value":"'lots'","time":100}""",
+        """{"name":"measure.status","value":"'derp'","time":100}""")
+      there was one(redis).rpush("REQUEST_ID:req2",
         """{"name":"measure.cows","value":"'lots'","time":100}""",
         """{"name":"measure.status","value":"'derp'","time":100}""")
     }
