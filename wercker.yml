@@ -4,5 +4,5 @@ build:
     - script:
         name: echo java info
         code: |
-          echo "java -version"
+          java -version
     - ericfode/sbt-test
