@@ -1,3 +1,6 @@
+[![wercker status](https://app.wercker.com/status/cd189eb7defac15cc7e2dcba3366a1f8/m "wercker status")](https://app.wercker.com/project/bykey/cd189eb7defac15cc7e2dcba3366a1f8)
+
+
 Spitball
 ========
 
