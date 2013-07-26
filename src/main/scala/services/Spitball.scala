@@ -91,12 +91,10 @@ class Spitball(val redisService: RedisService) {
     if (!measures.isEmpty) {
       redisService.withRedis {
         redis =>
-
           val jsonMeasures = measures.map {
             kv =>
               kv.toJson.toString()
           }
-
           redis.rpush(key(requestId), jsonMeasures.toSeq: _*)
           redis.expire(key(requestId), sys.env.get("REQUESTS_EXPIRE_SEC").map(_.toInt).getOrElse(10 * 60))
           logger.info(s"redis.save saved.request_id=$requestId saved.pairs=${measures.size}")
