@@ -1,4 +1,6 @@
 box: mies/scala
+services:
+  - wercker/redis
 build:
   steps:
     - script:
