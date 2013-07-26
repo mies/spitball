@@ -19,7 +19,7 @@ class Spitball(val redisService: RedisService) {
 
   private lazy val logger = LoggerFactory.getLogger(Spitball.getClass)
 
-  val datep = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+  val datep = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSSSSS")
 
   def get(requestId: String): Seq[Measure] = fromRedis(requestId)
 
