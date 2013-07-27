@@ -19,7 +19,9 @@ class Spitball(val redisService: RedisService) {
 
   private lazy val logger = LoggerFactory.getLogger(Spitball.getClass)
 
-  val datep = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
+  val datep = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSSSSS")
+
+  val datepShort = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
 
   def get(requestId: String): Seq[Measure] = fromRedis(requestId)
 
@@ -53,7 +55,7 @@ class Spitball(val redisService: RedisService) {
   }
 
 
-  private def parse(in: String): Iterator[LogLine] = {
+  def parse(in: String): Iterator[LogLine] = {
     @tailrec
     def loop(unparsed: Iterator[Char], parsed: Iterator[LogLine]): Iterator[LogLine] = {
      if (unparsed.isEmpty) parsed
@@ -61,7 +63,13 @@ class Spitball(val redisService: RedisService) {
         val (head, tail) = unparsed.span(_ != ' ')
         val length = head.mkString.toInt
         val chunk = tail.slice(1, 1 + length).mkString
-        val time = datep.parse(chunk.split(' ')(1)).getTime
+       val timestr = chunk.split(" ", 2)(1)
+        val time = if (timestr.length < datep.toPattern.length){
+          datep.parse(timestr).getTime()
+        } else {
+          datepShort.parse(timestr).getTime()
+        }
+
         loop(tail, parsed ++ Iterator(LogLine(time, chunk)))
       }
     }

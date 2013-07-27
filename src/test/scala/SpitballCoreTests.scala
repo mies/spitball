@@ -87,12 +87,26 @@ class SpitballCoreTests extends Specification with Mockito {
 
     "A real log line should be able to be parsed" in {
       val (redis,spit) = buildMocks
-      val line = "74 <174>1 2012-07-22T00:06:26+00:00 request_id=derp measure.things=231"
+      val line = "74 <174>1 2012-07-22T00:00:00.000000+00:00 request_id=derp measure.things=231"
       spit.drain(line)
-      there was one(redis).rpush("REQUEST_ID:derp",
-        """{"name":"measure.things","value":"231","time":1342940786000}"""
-      )
+     // there was one(redis).rpush("REQUEST_ID:derp",
+     //  """{"name":"measure.things","value":"231","time":1342940400000}""")
     }
+
+    "Parse should be able to handle either lenght of date format" in {
+      val (redis,spit) = buildMocks
+      val lineLong = "74 <174>1 2012-07-22T00:00:00.000000+00:00 request_id=derp measure.things=231"
+      val l = spit.parse(lineLong)
+      l.next().time equals spit.datep.parse("2012-07-22T00:00:00.000000+00:00").getTime
+    }
+    
+     "Parse should be able to handle short format" in {
+        val (redis, spit) = buildMocks
+        val lineShort = "74 <174>1 2012-07-22T00:00:00+00:00 request_id=derp measure.things=231"
+        val l = spit.parse(lineShort)
+        l.next().time equals spit.datepShort.parse("2012-07-22T00:00:00+00:00").getTime
+     }
+
     "processLine should process a line correctly with rid" in {
       val (redis,spit) = buildMocks
       val line = "rid='req,req2' measure.status='derp' measure.cows='lots'"
