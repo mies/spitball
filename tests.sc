@@ -15,5 +15,4 @@ import spray.json._
 import models._
 import controllers.Formatters._
 
-
 Spitball
