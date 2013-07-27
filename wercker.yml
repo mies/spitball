@@ -1,7 +1,4 @@
 box: mies/scala
 build:
   steps:
-    - script:
-        name: set environment variables
-        code: export LANG=POSIX
     - ericfode/sbt-test
